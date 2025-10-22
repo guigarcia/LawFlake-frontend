@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LawFlake - Documentos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/lawflake.css" rel="stylesheet">
+    <style>
+        .upload-zone {
+            border: 3px dashed var(--gray-light);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-xl);
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+            background: white;
+        }
+        .upload-zone:hover, .upload-zone.drag-over {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+        }
+        .upload-zone i {
+            font-size: 4rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: var(--spacing-md);
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-md);
+            background: white;
+            border-radius: var(--radius-sm);
+            margin-bottom: var(--spacing-sm);
+            transition: var(--transition);
+        }
+        .file-item:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateX(4px);
+        }
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            flex: 1;
+        }
+        .file-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+        .file-details h4 {
+            margin: 0;
+            color: var(--dark);
+            font-weight: 600;
+        }
+        .file-details p {
+            margin: 0;
+            color: var(--gray);
+            font-size: 0.875rem;
+        }
+        .file-actions {
+            display: flex;
+            gap: var(--spacing-xs);
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <i class="bi bi-snow2"></i>
+            <h1>LawFlake</h1>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-link">
+                <i class="bi bi-grid-fill"></i>
+                Dashboard
+            </a>
+            <a href="processos.html" class="nav-link">
+                <i class="bi bi-folder-fill"></i>
+                Processos
+            </a>
+            <a href="chat.html" class="nav-link">
+                <i class="bi bi-chat-dots-fill"></i>
+                Chat IA
+            </a>
+            <a href="documentos.html" class="nav-link active">
+                <i class="bi bi-file-earmark-text-fill"></i>
+                Documentos
+            </a>
+            <a href="relatorios.html" class="nav-link">
+                <i class="bi bi-graph-up"></i>
+                Relatórios
+            </a>
+        </nav>
+
+        <div style="margin-top: auto; padding-top: 2rem; border-top: 1px solid var(--gray-light);">
+            <a href="#" class="nav-link" onclick="logout()">
+                <i class="bi bi-box-arrow-right"></i>
+                Sair
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Documentos</h1>
+                <p class="page-subtitle">Gerencie e processe seus documentos legais</p>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-outline" onclick="connectGoogleDrive()">
+                    <i class="bi bi-google"></i>
+                    Conectar Google Drive
+                </button>
+                <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                    <i class="bi bi-upload"></i>
+                    Upload Manual
+                </button>
+            </div>
+        </div>
+
+        <!-- Upload Zone -->
+        <div class="card mb-4 fade-in">
+            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                <i class="bi bi-cloud-upload"></i>
+                <h2 style="margin-bottom: var(--spacing-sm); color: var(--dark);">Arraste arquivos aqui</h2>
+                <p style="color: var(--gray); margin-bottom: var(--spacing-md);">ou clique para selecionar</p>
+                <p style="color: var(--gray); font-size: 0.875rem;">Suporta PDF, DOC, DOCX até 50MB</p>
+            </div>
+            <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx" style="display: none;" onchange="handleFileSelect(event)">
+        </div>
+
+        <!-- File List -->
+        <div class="card fade-in" style="animation-delay: 0.1s;">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="bi bi-files"></i>
+                    Documentos Recentes
+                </h2>
+                <div style="display: flex; gap: var(--spacing-sm);">
+                    <select class="btn btn-outline btn-sm" id="filterType">
+                        <option value="all">Todos os Tipos</option>
+                        <option value="pdf">PDF</option>
+                        <option value="doc">Word</option>
+                    </select>
+                    <select class="btn btn-outline btn-sm" id="filterStatus">
+                        <option value="all">Todos Status</option>
+                        <option value="processado">Processado</option>
+                        <option value="pendente">Pendente</option>
+                    </select>
+                </div>
+            </div>
+            <div id="fileList">
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon">
+                            <i class="bi bi-file-pdf"></i>
+                        </div>
+                        <div class="file-details">
+                            <h4>processo_1004555.pdf</h4>
+                            <p>Uploaded há 2 horas - 2.4 MB - OCR Processado</p>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn btn-outline btn-sm" onclick="viewDocument('processo_1004555.pdf')">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-outline btn-sm" onclick="downloadDocument('processo_1004555.pdf')">
+                            <i class="bi bi-download"></i>
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="processOCR('processo_1004555.pdf')">
+                            <i class="bi bi-cpu"></i>
+                            OCR
+                        </button>
+                    </div>
+                </div>
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon">
+                            <i class="bi bi-file-pdf"></i>
+                        </div>
+                        <div class="file-details">
+                            <h4>peticao_inicial.pdf</h4>
+                            <p>Uploaded há 1 dia - 1.8 MB - Pendente OCR</p>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn btn-outline btn-sm">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-outline btn-sm">
+                            <i class="bi bi-download"></i>
+                        </button>
+                        <button class="btn btn-primary btn-sm">
+                            <i class="bi bi-cpu"></i>
+                            OCR
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            setupDragAndDrop();
+        });
+
+        function setupDragAndDrop() {
+            const uploadZone = document.getElementById('uploadZone');
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadZone.addEventListener(eventName, () => {
+                    uploadZone.classList.add('drag-over');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadZone.addEventListener(eventName, () => {
+                    uploadZone.classList.remove('drag-over');
+                }, false);
+            });
+
+            uploadZone.addEventListener('drop', handleDrop, false);
+        }
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            handleFiles(files);
+        }
+
+        async function handleFiles(files) {
+            for (let file of files) {
+                console.log('Uploading:', file.name);
+                // TODO: Implement actual upload to backend
+                alert(`Upload iniciado: ${file.name}\n\nFuncionalidade será conectada ao backend em breve.`);
+            }
+        }
+
+        function connectGoogleDrive() {
+            alert('Integração com Google Drive será implementada em breve.\n\nPermitirá:\n- Importar PDFs automaticamente\n- Sincronizar pastas\n- Processamento automático');
+        }
+
+        function viewDocument(filename) {
+            window.open(`/uploads/${filename}`, '_blank');
+        }
+
+        function downloadDocument(filename) {
+            const link = document.createElement('a');
+            link.href = `/uploads/${filename}`;
+            link.download = filename;
+            link.click();
+        }
+
+        async function processOCR(filename) {
+            if (confirm(`Processar OCR do documento ${filename}?\n\nEsta operação usará Snowflake Document AI.`)) {
+                alert('Processamento OCR iniciado.\n\nSerá implementado via sp_processar_ocr_documento.');
+            }
+        }
+    </script>
+</body>
+</html>
