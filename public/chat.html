@@ -234,6 +234,31 @@
                     <h4 style="font-size: 0.95rem; font-weight: 600; margin: 0.5rem 0;">Análise de Risco</h4>
                     <p style="font-size: 0.8rem; margin: 0; opacity: 0.8;">Avalie riscos e probabilidades</p>
                 </div>
+                <div class="quick-action-item" onclick="selectQuickAction('comparar')">
+                    <i class="bi bi-diagram-3" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;"></i>
+                    <h4 style="font-size: 0.95rem; font-weight: 600; margin: 0.5rem 0;">Comparar com Base</h4>
+                    <p style="font-size: 0.8rem; margin: 0; opacity: 0.8;">Compare com processos similares</p>
+                </div>
+                <div class="quick-action-item" onclick="selectQuickAction('relatorio')">
+                    <i class="bi bi-file-earmark-bar-graph" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;"></i>
+                    <h4 style="font-size: 0.95rem; font-weight: 600; margin: 0.5rem 0;">Gerar Relatório</h4>
+                    <p style="font-size: 0.8rem; margin: 0; opacity: 0.8;">Crie relatório detalhado em PDF</p>
+                </div>
+                <div class="quick-action-item" onclick="selectQuickAction('precedentes')">
+                    <i class="bi bi-search" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;"></i>
+                    <h4 style="font-size: 0.95rem; font-weight: 600; margin: 0.5rem 0;">Precedentes Similares</h4>
+                    <p style="font-size: 0.8rem; margin: 0; opacity: 0.8;">Busque jurisprudência relevante</p>
+                </div>
+                <div class="quick-action-item" onclick="selectQuickAction('custas')">
+                    <i class="bi bi-currency-dollar" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;"></i>
+                    <h4 style="font-size: 0.95rem; font-weight: 600; margin: 0.5rem 0;">Análise de Custas</h4>
+                    <p style="font-size: 0.8rem; margin: 0; opacity: 0.8;">Calcule custas e honorários</p>
+                </div>
+                <div class="quick-action-item" onclick="selectQuickAction('timeline')">
+                    <i class="bi bi-clock-history" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;"></i>
+                    <h4 style="font-size: 0.95rem; font-weight: 600; margin: 0.5rem 0;">Timeline do Processo</h4>
+                    <p style="font-size: 0.8rem; margin: 0; opacity: 0.8;">Visualize linha do tempo</p>
+                </div>
             </div>
 
             <!-- Chat Main -->
@@ -327,7 +352,7 @@
                 // Fetch actual processos list
                 const processosResponse = await apiPost('/processos/search', {
                     size: 1000,
-                    from_: 0
+                    from: 0
                 });
 
                 processosList = processosResponse.hits || [];
@@ -412,7 +437,12 @@
             const prompts = {
                 'resumo': 'Gere um resumo executivo dos meus processos ativos, incluindo status, prazos críticos e principais desenvolvimentos.',
                 'prazos': 'Liste todos os prazos processuais pendentes nos próximos 30 dias, ordenados por urgência.',
-                'risco': 'Analise os riscos processuais do meu portfólio, identificando processos de alto risco e recomendações.'
+                'risco': 'Analise os riscos processuais do meu portfólio, identificando processos de alto risco e recomendações.',
+                'comparar': 'Compare este processo com casos similares na base de dados, identificando padrões e diferenças relevantes.',
+                'relatorio': 'Gere um relatório completo e detalhado em formato estruturado, pronto para exportação em PDF.',
+                'precedentes': 'Busque precedentes judiciais e jurisprudência similar a este processo, com foco em decisões recentes.',
+                'custas': 'Calcule e detalhe todas as custas processuais, honorários advocatícios e despesas previstas.',
+                'timeline': 'Crie uma linha do tempo detalhada do processo, destacando eventos-chave e próximos passos.'
             };
 
             const input = document.getElementById('chatInput');
