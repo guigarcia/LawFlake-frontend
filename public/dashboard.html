@@ -411,10 +411,11 @@
 
                 // Atualizar cards principais
                 document.getElementById('totalProcessos').textContent = stats.total_processos || 0;
-                document.getElementById('prazosUrgentes').textContent = stats.prazos_urgentes || 0;
-                document.getElementById('exposicaoTotal').textContent =
-                    'R$ ' + (stats.exposicao_total || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2});
-                document.getElementById('altoRisco').textContent = stats.processos_alto_risco || 0;
+                document.getElementById('prazosProximos').textContent = stats.prazos_urgentes || 0;
+
+                // totalDocs e sumulas vem de outros endpoints - ignorar por enquanto
+                // document.getElementById('totalDocs').textContent = 0;
+                // document.getElementById('sumulas').textContent = 0;
 
                 // Atualizar gráficos se existirem
                 if (typeof updateChartTipos === 'function' && stats.por_tipo) {
@@ -425,8 +426,8 @@
                     updateChartPrazos(stats.prazos_timeline);
                 }
 
-                if (typeof updateChartRisco === 'function' && stats.risco_por_tribunal) {
-                    updateChartRisco(stats.risco_por_tribunal);
+                if (typeof updateChartRisco === 'function' && stats.risco_por_instancia) {
+                    updateChartRisco(stats.risco_por_instancia);
                 }
 
                 // Atualizar tabela de processos críticos
