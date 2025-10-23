@@ -109,6 +109,10 @@
         </nav>
 
         <div style="margin-top: auto; padding-top: 2rem; border-top: 1px solid var(--gray-light);">
+            <a href="perfil.html" class="nav-link">
+                <i class="bi bi-person-circle"></i>
+                Perfil
+            </a>
             <a href="#" class="nav-link" onclick="logout()">
                 <i class="bi bi-box-arrow-right"></i>
                 Sair
@@ -119,10 +123,11 @@
     <!-- Main Content -->
     <div class="main-content">
         <!-- Header -->
+        <!-- CORREÇÃO: Clarificar que esta página faz upload de PROCESSOS COMPLETOS -->
         <div class="page-header">
             <div>
-                <h1 class="page-title">Documentos</h1>
-                <p class="page-subtitle">Gerencie e processe seus documentos legais</p>
+                <h1 class="page-title">📁 Upload de Processos</h1>
+                <p class="page-subtitle">Faça upload do PDF completo do processo - A IA extrai automaticamente todos os dados</p>
             </div>
             <div class="page-actions">
                 <button class="btn btn-outline" onclick="connectGoogleDrive()">
@@ -131,7 +136,7 @@
                 </button>
                 <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
                     <i class="bi bi-upload"></i>
-                    Upload Manual
+                    Upload de Processo
                 </button>
             </div>
         </div>
@@ -140,11 +145,14 @@
         <div class="card mb-4 fade-in">
             <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
                 <i class="bi bi-cloud-upload"></i>
-                <h2 style="margin-bottom: var(--spacing-sm); color: var(--dark);">Arraste arquivos aqui</h2>
+                <h2 style="margin-bottom: var(--spacing-sm); color: var(--dark);">Arraste o PDF do processo aqui</h2>
                 <p style="color: var(--gray); margin-bottom: var(--spacing-md);">ou clique para selecionar</p>
-                <p style="color: var(--gray); font-size: 0.875rem;">Suporta PDF, DOC, DOCX até 50MB</p>
+                <p style="color: var(--gray); font-size: 0.875rem;">
+                    ✅ Upload 100% automático - IA extrai: número, partes, valor, tipo, vara, comarca<br>
+                    📄 Apenas PDFs até 50MB
+                </p>
             </div>
-            <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx" style="display: none;" onchange="handleFileSelect(event)">
+            <input type="file" id="fileInput" multiple accept=".pdf" style="display: none;" onchange="handleFileSelect(event)">
         </div>
 
         <!-- File List -->
@@ -272,12 +280,11 @@
         }
 
         async function uploadFile(file) {
-            // Validate file type
-            const validTypes = ['.pdf', '.doc', '.docx'];
+            // CORREÇÃO: Validar apenas PDF (upload de processo completo)
             const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
 
-            if (!validTypes.includes(fileExt)) {
-                alert(`Arquivo ${file.name} não é suportado.\nAceitos: PDF, DOC, DOCX`);
+            if (fileExt !== '.pdf') {
+                alert(`❌ Apenas arquivos PDF são aceitos para upload de processos.\n\nArquivo: ${file.name}`);
                 return;
             }
 
@@ -332,9 +339,30 @@
                 progressDiv.remove();
 
                 if (data.success) {
-                    alert(`✓ Documento enviado com sucesso!\n\nProcesso: ${data.numero_processo}\nStatus: ${data.message}`);
+                    // Show success with AI-extracted data
+                    const extractedInfo = `
+✅ PROCESSO PROCESSADO COM SUCESSO!
 
-                    // Add to list
+📋 Dados Extraídos Automaticamente pela IA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Número: ${data.numero_processo || 'Não identificado'}
+Título: ${data.titulo || 'Não disponível'}
+Tipo: ${data.tipo_processo || 'Não classificado'}
+${data.valor_causa ? `Valor da Causa: R$ ${parseFloat(data.valor_causa).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : ''}
+${data.vara ? `Vara: ${data.vara}` : ''}
+${data.comarca ? `Comarca: ${data.comarca}` : ''}
+
+🤖 Processamento:
+OCR: ${data.ocr_status === 'COMPLETED' ? '✓ Concluído' : '⏳ Pendente'}
+Embeddings: ${data.embedding_status === 'COMPLETED' ? '✓ Concluído (' + data.total_embeddings + ' vetores)' : '⏳ Pendente'}
+Origem: ${data.origem}
+
+${data.message}
+                    `.trim();
+
+                    alert(extractedInfo);
+
+                    // Add to list with AI-extracted data
                     const newFileDiv = document.createElement('div');
                     newFileDiv.innerHTML = `
                         <div class="file-item">
@@ -343,27 +371,29 @@
                                     <i class="bi bi-file-pdf"></i>
                                 </div>
                                 <div class="file-details">
-                                    <h4>${file.name}</h4>
-                                    <p>Agora - ${(file.size / 1024 / 1024).toFixed(2)} MB - OCR ${data.status === 'completed' ? 'Processado' : 'Pendente'}</p>
+                                    <h4>${data.numero_processo || file.name}</h4>
+                                    <p>${data.titulo || 'Processo sem título'} - ${data.tipo_processo || 'Tipo não classificado'}</p>
+                                    <p style="font-size: 0.75rem; color: var(--gray);">
+                                        ${(file.size / 1024 / 1024).toFixed(2)} MB •
+                                        OCR ${data.ocr_status === 'COMPLETED' ? '✓' : '⏳'} •
+                                        Embeddings ${data.embedding_status === 'COMPLETED' ? '✓ (' + data.total_embeddings + ')' : '⏳'}
+                                    </p>
                                 </div>
                             </div>
                             <div class="file-actions">
-                                <button class="btn btn-outline btn-sm" onclick="window.open('${API_BASE_URL}/processos/${data.processo_id}/download', '_blank')">
+                                <button class="btn btn-outline btn-sm" onclick="window.location.href='processos.html?id=${data.processo_id}'">
                                     <i class="bi bi-eye"></i>
                                 </button>
-                                <button class="btn btn-outline btn-sm" onclick="downloadDocument('${data.processo_id}')">
-                                    <i class="bi bi-download"></i>
-                                </button>
                                 <button class="btn btn-primary btn-sm" disabled>
-                                    <i class="bi bi-cpu"></i>
-                                    ${data.status === 'completed' ? 'OCR OK' : 'Processando...'}
+                                    <i class="bi bi-check-circle"></i>
+                                    Processado
                                 </button>
                             </div>
                         </div>
                     `;
                     document.getElementById('fileList').prepend(newFileDiv);
                 } else {
-                    alert(`Erro: ${data.error}\n\n${data.message}`);
+                    alert(`❌ ERRO AO PROCESSAR\n\nCódigo: ${data.error}\nMensagem: ${data.message}\n\n${data.details || 'Nenhum detalhe adicional'}`);
                 }
 
             } catch (error) {
