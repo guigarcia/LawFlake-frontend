@@ -182,9 +182,81 @@
         </div>
     </div>
 
-    <script src="js/config.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/api.js"></script>
+    <script src="js/config.js">
+        function updateDashboardStats(stats) {
+            // Atualizar cards com os valores reais
+            const totalProcessosEl = document.querySelector('[data-stat="total-processos"]');
+            if (totalProcessosEl) {
+                totalProcessosEl.textContent = stats.total_processos || 0;
+            }
+
+            const totalDocumentosEl = document.querySelector('[data-stat="total-documentos"]');
+            if (totalDocumentosEl) {
+                totalDocumentosEl.textContent = stats.total_documentos || 0;
+            }
+
+            const prazosPendentesEl = document.querySelector('[data-stat="prazos-pendentes"]');
+            if (prazosPendentesEl) {
+                prazosPendentesEl.textContent = stats.prazos_pendentes || 0;
+            }
+
+            const sumulasEl = document.querySelector('[data-stat="sumulas"]');
+            if (sumulasEl) {
+                sumulasEl.textContent = stats.sumulas_knowledge_base || 0;
+            }
+        }
+        
+    </script>
+    <script src="js/auth.js">
+        function updateDashboardStats(stats) {
+            // Atualizar cards com os valores reais
+            const totalProcessosEl = document.querySelector('[data-stat="total-processos"]');
+            if (totalProcessosEl) {
+                totalProcessosEl.textContent = stats.total_processos || 0;
+            }
+
+            const totalDocumentosEl = document.querySelector('[data-stat="total-documentos"]');
+            if (totalDocumentosEl) {
+                totalDocumentosEl.textContent = stats.total_documentos || 0;
+            }
+
+            const prazosPendentesEl = document.querySelector('[data-stat="prazos-pendentes"]');
+            if (prazosPendentesEl) {
+                prazosPendentesEl.textContent = stats.prazos_pendentes || 0;
+            }
+
+            const sumulasEl = document.querySelector('[data-stat="sumulas"]');
+            if (sumulasEl) {
+                sumulasEl.textContent = stats.sumulas_knowledge_base || 0;
+            }
+        }
+        
+    </script>
+    <script src="js/api.js">
+        function updateDashboardStats(stats) {
+            // Atualizar cards com os valores reais
+            const totalProcessosEl = document.querySelector('[data-stat="total-processos"]');
+            if (totalProcessosEl) {
+                totalProcessosEl.textContent = stats.total_processos || 0;
+            }
+
+            const totalDocumentosEl = document.querySelector('[data-stat="total-documentos"]');
+            if (totalDocumentosEl) {
+                totalDocumentosEl.textContent = stats.total_documentos || 0;
+            }
+
+            const prazosPendentesEl = document.querySelector('[data-stat="prazos-pendentes"]');
+            if (prazosPendentesEl) {
+                prazosPendentesEl.textContent = stats.prazos_pendentes || 0;
+            }
+
+            const sumulasEl = document.querySelector('[data-stat="sumulas"]');
+            if (sumulasEl) {
+                sumulasEl.textContent = stats.sumulas_knowledge_base || 0;
+            }
+        }
+        
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             checkAuth();
@@ -303,6 +375,173 @@
         function viewProcesso(numero) {
             window.location.href = `processos.html?numero=${numero}`;
         }
+    
+        function updateDashboardStats(stats) {
+            // Atualizar cards com os valores reais
+            const totalProcessosEl = document.querySelector('[data-stat="total-processos"]');
+            if (totalProcessosEl) {
+                totalProcessosEl.textContent = stats.total_processos || 0;
+            }
+
+            const totalDocumentosEl = document.querySelector('[data-stat="total-documentos"]');
+            if (totalDocumentosEl) {
+                totalDocumentosEl.textContent = stats.total_documentos || 0;
+            }
+
+            const prazosPendentesEl = document.querySelector('[data-stat="prazos-pendentes"]');
+            if (prazosPendentesEl) {
+                prazosPendentesEl.textContent = stats.prazos_pendentes || 0;
+            }
+
+            const sumulasEl = document.querySelector('[data-stat="sumulas"]');
+            if (sumulasEl) {
+                sumulasEl.textContent = stats.sumulas_knowledge_base || 0;
+            }
+        }
+        
+    
+        // ============================================================================
+        // DASHBOARD FUNCTIONS - DADOS REAIS DA API
+        // ============================================================================
+
+        async function loadDashboard() {
+            try {
+                // Buscar stats da API
+                const stats = await apiGet('/processos/stats');
+
+                // Atualizar cards principais
+                document.getElementById('totalProcessos').textContent = stats.total_processos || 0;
+                document.getElementById('prazosUrgentes').textContent = stats.prazos_urgentes || 0;
+                document.getElementById('exposicaoTotal').textContent =
+                    'R$ ' + (stats.exposicao_total || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                document.getElementById('altoRisco').textContent = stats.processos_alto_risco || 0;
+
+                // Atualizar gráficos se existirem
+                if (typeof updateChartTipos === 'function' && stats.por_tipo) {
+                    updateChartTipos(stats.por_tipo);
+                }
+
+                if (typeof updateChartPrazos === 'function' && stats.prazos_timeline) {
+                    updateChartPrazos(stats.prazos_timeline);
+                }
+
+                if (typeof updateChartRisco === 'function' && stats.risco_por_tribunal) {
+                    updateChartRisco(stats.risco_por_tribunal);
+                }
+
+                // Atualizar tabela de processos críticos
+                if (stats.processos_criticos) {
+                    updateProcessosCriticos(stats.processos_criticos);
+                }
+
+            } catch (error) {
+                console.error('Erro ao carregar dashboard:', error);
+                alert('Erro ao carregar dados do dashboard. Verifique sua conexão.');
+            }
+        }
+
+        function updateChartTipos(porTipo) {
+            if (!window.tipoChart) {
+                console.warn('Chart tipoChart não encontrado');
+                return;
+            }
+
+            const labels = Object.keys(porTipo);
+            const data = Object.values(porTipo);
+
+            tipoChart.data.labels = labels;
+            tipoChart.data.datasets[0].data = data;
+            tipoChart.update();
+        }
+
+        function updateChartPrazos(prazos) {
+            if (!window.prazosChart) {
+                console.warn('Chart prazosChart não encontrado');
+                return;
+            }
+
+            const labels = prazos.map(p => {
+                const date = new Date(p.data);
+                return date.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
+            });
+
+            const data = prazos.map(p => p.dias_restantes);
+
+            const colors = prazos.map(p => {
+                if (p.urgencia === 'critico') return '#dc3545';
+                if (p.urgencia === 'urgente') return '#ffc107';
+                return '#28a745';
+            });
+
+            prazosChart.data.labels = labels;
+            prazosChart.data.datasets[0].data = data;
+            prazosChart.data.datasets[0].backgroundColor = colors;
+            prazosChart.update();
+        }
+
+        function updateChartRisco(riscoPorTribunal) {
+            if (!window.riscoChart) {
+                console.warn('Chart riscoChart não encontrado');
+                return;
+            }
+
+            const labels = Object.keys(riscoPorTribunal);
+            const altos = labels.map(t => riscoPorTribunal[t].alto);
+            const medios = labels.map(t => riscoPorTribunal[t].medio);
+            const baixos = labels.map(t => riscoPorTribunal[t].baixo);
+
+            riscoChart.data.labels = labels;
+            riscoChart.data.datasets[0].data = altos;
+            riscoChart.data.datasets[1].data = medios;
+            riscoChart.data.datasets[2].data = baixos;
+            riscoChart.update();
+        }
+
+        function updateProcessosCriticos(criticos) {
+            const tbody = document.getElementById('processosTable');
+            if (!tbody) {
+                console.warn('Tabela processosTable não encontrada');
+                return;
+            }
+
+            if (criticos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Nenhum processo crítico</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = criticos.map(p => `
+                <tr>
+                    <td><a href="processo-detalhes.html?id=${p.id}">${p.numero_processo}</a></td>
+                    <td>${p.titulo || 'Sem título'}</td>
+                    <td><span class="badge badge-${getBadgeClass(p.risco)}">${p.risco || 'N/A'}</span></td>
+                    <td>${p.proximo_prazo ? new Date(p.proximo_prazo).toLocaleDateString('pt-BR') : '-'}</td>
+                    <td>${p.dias_restantes !== null && p.dias_restantes !== undefined ? p.dias_restantes + ' dias' : '-'}</td>
+                    <td>R$ ${(p.valor_causa || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                </tr>
+            `).join('');
+        }
+
+        function getBadgeClass(risco) {
+            switch(risco) {
+                case 'ALTO': return 'danger';
+                case 'MÉDIO': return 'warning';
+                case 'BAIXO': return 'success';
+                default: return 'secondary';
+            }
+        }
+
+        // ============================================================================
+        // INICIALIZAÇÃO
+        // ============================================================================
+
+        // Carregar dashboard quando página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboard();
+
+            // Recarregar a cada 5 minutos
+            setInterval(loadDashboard, 5 * 60 * 1000);
+        });
+    
     </script>
 </body>
 </html>

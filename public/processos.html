@@ -475,32 +475,38 @@
 
         async function loadProcessos() {
             try {
-                // Mock data (replace with real API call later)
-                processos = [
-                    {
-                        numero: '1004555-07.2021.4.01.3310',
-                        partes: 'João da Silva vs. INSS',
-                        tipo: 'Recurso Inominado Cível',
-                        status: 'ativo',
-                        tribunal: 'TRF1',
-                        dataAtualizacao: '2025-10-20',
-                        pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
-                    },
-                    {
-                        numero: '0001234-56.2021.5.01.0001',
-                        partes: 'Maria Santos vs. Empresa XYZ',
-                        tipo: 'Procedimento Comum',
-                        status: 'ativo',
-                        tribunal: 'TST',
-                        dataAtualizacao: '2025-10-19',
-                        pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
-                    }
-                ];
+                // Make real API call to backend
+                const response = await apiGet('/processos/?limit=50');
+
+                // Transform API response to match frontend format
+                processos = response.map(p => ({
+                    id: p.ID || p.id,
+                    numero: p.NUMERO_PROCESSO || p.numero_processo,
+                    partes: formatPartes(p.POLO_ATIVO || p.polo_ativo, p.POLO_PASSIVO || p.polo_passivo),
+                    tipo: p.TIPO_PROCESSO || p.tipo_processo,
+                    status: p.STATUS || p.status,
+                    tribunal: p.TRIBUNAL || p.tribunal,
+                    comarca: p.COMARCA || p.comarca,
+                    vara: p.VARA || p.vara,
+                    valorCausa: p.VALOR_CAUSA || p.valor_causa,
+                    dataDistribuicao: p.DATA_DISTRIBUICAO || p.data_distribuicao,
+                    dataAtualizacao: p.UPDATED_AT || p.updated_at,
+                    titulo: p.TITULO || p.titulo,
+                    risco: p.RISCO || p.risco,
+                    pdfUrl: null // PDF será carregado sob demanda
+                }));
 
                 renderProcessos(processos);
             } catch (error) {
                 console.error('Error loading processos:', error);
+                alert('Erro ao carregar processos. Verifique sua conexão e tente novamente.');
             }
+        }
+
+        function formatPartes(poloAtivo, poloPassivo) {
+            const ativo = Array.isArray(poloAtivo) ? poloAtivo.join(', ') : poloAtivo || 'N/A';
+            const passivo = Array.isArray(poloPassivo) ? poloPassivo.join(', ') : poloPassivo || 'N/A';
+            return `${ativo} vs. ${passivo}`;
         }
 
         function renderProcessos(data) {

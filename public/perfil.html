@@ -535,6 +535,226 @@ A sincronização automática começará a buscar processos da base DataJud conf
         document.addEventListener('DOMContentLoaded', () => {
             loadDataJudConfig();
         });
-    </script>
+    
+// ============================================================================
+// DATAJUD CONFIGURATION
+// ============================================================================
+
+async function loadDataJudConfig() {
+    try {
+        const user = await apiGet('/auth/me');
+
+        // Mostrar apenas para admins
+        if (user.role !== 'admin') {
+            const card = document.getElementById('datajudConfigCard');
+            if (card) card.style.display = 'none';
+            return;
+        }
+
+        const card = document.getElementById('datajudConfigCard');
+        if (card) card.style.display = 'block';
+
+        // Carregar config
+        const config = await apiGet(`/companies/${user.company_id}/datajud-config`);
+
+        const cnpjInput = document.getElementById('cnpjMonitorado');
+        const freqSelect = document.getElementById('syncFrequency');
+
+        if (cnpjInput) cnpjInput.value = config.cnpj_monitorado || '';
+        if (freqSelect) freqSelect.value = config.sync_frequency || 'daily';
+
+        // Status
+        const lastSyncEl = document.getElementById('lastSync');
+        if (lastSyncEl) {
+            if (config.last_sync) {
+                const lastSync = new Date(config.last_sync);
+                lastSyncEl.textContent = lastSync.toLocaleString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } else {
+                lastSyncEl.textContent = 'Nunca';
+            }
+        }
+
+        const totalEl = document.getElementById('totalProcessosSync');
+        if (totalEl) {
+            totalEl.textContent = config.total_processos_sincronizados || 0;
+        }
+
+    } catch (error) {
+        console.error('Erro ao carregar config DataJud:', error);
+    }
+}
+
+async function saveDataJudConfig() {
+    try {
+        const user = await apiGet('/auth/me');
+
+        const cnpjInput = document.getElementById('cnpjMonitorado');
+        const freqSelect = document.getElementById('syncFrequency');
+
+        const cnpj = cnpjInput ? cnpjInput.value : '';
+        const frequency = freqSelect ? freqSelect.value : 'daily';
+
+        // Validar CNPJ
+        const cnpjLimpo = cnpj.replace(/[^\d]/g, '');
+        if (cnpj && cnpjLimpo.length !== 14) {
+            alert('CNPJ inválido. Digite 14 dígitos.');
+            return;
+        }
+
+        await apiPost(`/companies/${user.company_id}/datajud-config`, {
+            cnpj_monitorado: cnpj || null,
+            sync_frequency: frequency
+        });
+
+        alert('Configuração salva com sucesso!');
+        loadDataJudConfig();
+
+    } catch (error) {
+        console.error('Erro ao salvar config:', error);
+        alert('Erro ao salvar: ' + error.message);
+    }
+}
+
+async function syncDataJudNow() {
+    if (!confirm('Iniciar sincronização?\n\nIsso pode demorar alguns minutos.')) {
+        return;
+    }
+
+    try {
+        const user = await apiGet('/auth/me');
+
+        // Mostrar progress
+        const progressDiv = document.getElementById('syncProgress');
+        const progressText = document.getElementById('syncProgressText');
+        const syncBtn = document.getElementById('syncNowBtn');
+
+        if (progressDiv) progressDiv.style.display = 'block';
+        if (syncBtn) syncBtn.disabled = true;
+        if (progressText) progressText.textContent = 'Sincronizando...';
+
+        // Sync
+        const result = await apiPost(`/companies/${user.company_id}/sync-datajud-now`, {});
+
+        // Ocultar progress
+        if (progressDiv) progressDiv.style.display = 'none';
+        if (syncBtn) syncBtn.disabled = false;
+
+        // Resultado
+        alert(
+            `Sincronização concluída!\n\n` +
+            `✅ Novos: ${result.processos_novos}\n` +
+            `🔄 Atualizados: ${result.processos_atualizados}`
+        );
+
+        loadDataJudConfig();
+
+    } catch (error) {
+        console.error('Erro ao sincronizar:', error);
+
+        const progressDiv = document.getElementById('syncProgress');
+        const syncBtn = document.getElementById('syncNowBtn');
+
+        if (progressDiv) progressDiv.style.display = 'none';
+        if (syncBtn) syncBtn.disabled = false;
+
+        alert('Erro ao sincronizar: ' + error.message);
+    }
+}
+
+// Máscara CNPJ
+const cnpjInput = document.getElementById('cnpjMonitorado');
+if (cnpjInput) {
+    cnpjInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 14) {
+            value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+            value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+            value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+            value = value.replace(/(\d{4})(\d)/, '$1-$2');
+        }
+        e.target.value = value;
+    });
+}
+
+// Chamar ao carregar página
+window.addEventListener('DOMContentLoaded', function() {
+    // Aguardar 500ms para garantir que apiGet está disponível
+    setTimeout(loadDataJudConfig, 500);
+});
+
+</script>
+
+    <!-- DataJud Configuration (Admin Only) -->
+    <div class="card" id="datajudConfigCard" style="display: none;">
+        <h3>🤖 Monitoramento Automático DataJud</h3>
+        <p style="color: var(--gray); margin-bottom: var(--spacing-md);">
+            Configure a sincronização automática com a base nacional de processos judiciais (CNJ).
+            Processos onde seu CNPJ aparece serão sincronizados automaticamente.
+        </p>
+
+        <div class="form-group">
+            <label for="cnpjMonitorado">
+                CNPJ para Monitorar
+                <i class="bi bi-info-circle" title="Processos onde este CNPJ aparece" style="cursor: help;"></i>
+            </label>
+            <input type="text" id="cnpjMonitorado" placeholder="00.000.000/0000-00" maxlength="18">
+            <small>Digite o CNPJ no formato: 00.000.000/0000-00</small>
+        </div>
+
+        <div class="form-group">
+            <label for="syncFrequency">Frequência de Sincronização</label>
+            <select id="syncFrequency">
+                <option value="daily">Diária (2h da manhã)</option>
+                <option value="weekly">Semanal (segunda 2h)</option>
+                <option value="manual">Apenas Manual</option>
+            </select>
+            <small>
+                <strong>Diária:</strong> Recomendado para alto volume<br>
+                <strong>Semanal:</strong> Acompanhamento periódico<br>
+                <strong>Manual:</strong> Você escolhe quando
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label>Status da Sincronização</label>
+            <div style="display: flex; gap: var(--spacing-md); flex-wrap: wrap;">
+                <div>
+                    <strong>Última Sincronização:</strong>
+                    <span id="lastSync" style="color: var(--gray);">Nunca</span>
+                </div>
+                <div>
+                    <strong>Total de Processos:</strong>
+                    <span id="totalProcessosSync" style="color: var(--gray);">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap;">
+            <button class="btn btn-primary" onclick="saveDataJudConfig()">
+                <i class="bi bi-save"></i>
+                Salvar Configuração
+            </button>
+            <button class="btn btn-outline" onclick="syncDataJudNow()" id="syncNowBtn">
+                <i class="bi bi-arrow-repeat"></i>
+                Sincronizar Agora
+            </button>
+        </div>
+
+        <div id="syncProgress" style="display: none; margin-top: var(--spacing-md);">
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 0%;"></div>
+            </div>
+            <p id="syncProgressText" style="text-align: center; margin-top: var(--spacing-sm);">
+                Sincronizando...
+            </p>
+        </div>
+    </div>
+    
 </body>
 </html>
