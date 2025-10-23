@@ -12,9 +12,16 @@
     <style>
         .chat-container {
             display: grid;
-            grid-template-columns: 320px 1fr;
+            grid-template-columns: 280px 320px 1fr;
             gap: var(--spacing-lg);
             height: calc(100vh - 180px);
+        }
+        .chat-history-sidebar {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+            overflow-y: auto;
         }
         .chat-sidebar {
             background: white;
@@ -22,6 +29,59 @@
             padding: var(--spacing-lg);
             box-shadow: var(--shadow-sm);
             overflow-y: auto;
+        }
+        .session-item {
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            border: 2px solid var(--gray-light);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+        }
+        .session-item:hover {
+            border-color: var(--primary);
+            background: var(--gray-lighter);
+        }
+        .session-item.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-color: var(--primary);
+        }
+        .session-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .session-meta {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+        .session-delete {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: var(--transition);
+        }
+        .session-item:hover .session-delete {
+            opacity: 1;
+        }
+        .session-delete:hover {
+            background: var(--dark);
         }
         .quick-action-item {
             padding: var(--spacing-md);
@@ -213,6 +273,24 @@
 
         <!-- Chat Container -->
         <div class="chat-container fade-in">
+            <!-- Chat History Sidebar -->
+            <div class="chat-history-sidebar">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+                    <h3 style="font-size: 1rem; font-weight: 600;">
+                        <i class="bi bi-clock-history"></i>
+                        Conversas
+                    </h3>
+                    <button class="btn btn-sm btn-primary" onclick="newSession()" title="Nova Conversa">
+                        <i class="bi bi-plus"></i>
+                    </button>
+                </div>
+                <div id="sessionsList">
+                    <p style="text-align: center; color: var(--gray); font-size: 0.875rem; padding: 2rem 0;">
+                        Carregando...
+                    </p>
+                </div>
+            </div>
+
             <!-- Quick Actions Sidebar -->
             <div class="chat-sidebar">
                 <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: var(--spacing-md);">
@@ -303,9 +381,26 @@
                             </label>
                         </div>
                         <div id="processoSelector" style="margin-top: var(--spacing-md); display: none;">
-                            <select id="processoSelect" class="form-input" style="width: 100%; padding: var(--spacing-sm);">
-                                <option value="">Carregando processos...</option>
-                            </select>
+                            <div style="position: relative;">
+                                <input
+                                    type="text"
+                                    id="processoSearch"
+                                    class="form-control"
+                                    placeholder="Digite o número ou nome do processo..."
+                                    autocomplete="off"
+                                    oninput="filterProcessos(this.value)"
+                                    onfocus="showProcessoSuggestions()"
+                                    style="width: 100%;">
+                                <div id="processoSuggestions" class="autocomplete-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid var(--gray-light); border-top: none; border-radius: 0 0 var(--radius-sm) var(--radius-sm); max-height: 300px; overflow-y: auto; z-index: 1000; box-shadow: var(--shadow-md);"></div>
+                            </div>
+                            <div id="selectedProcesso" style="margin-top: var(--spacing-sm); display: none;">
+                                <div style="padding: var(--spacing-sm); background: var(--gray-lighter); border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center;">
+                                    <span id="selectedProcessoText" style="font-size: 0.875rem;"></span>
+                                    <button onclick="clearSelectedProcesso()" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1rem;">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -333,10 +428,11 @@
         let isLoading = false;
         let selectedProcessoId = null;
         let processosList = [];
+        let sessionsList = [];
 
         document.addEventListener('DOMContentLoaded', () => {
             checkAuth();
-            currentSessionId = generateSessionId();
+            loadSessions();
             loadProcessos();
             checkUrlParameters();
         });
@@ -403,27 +499,103 @@
 
             if (context === 'especifico') {
                 processoSelector.style.display = 'block';
-
-                // Get selected processo
-                const select = document.getElementById('processoSelect');
-                select.addEventListener('change', function() {
-                    selectedProcessoId = this.value;
-
-                    if (selectedProcessoId) {
-                        const processo = processosList.find(p => p.id === selectedProcessoId);
-                        if (processo) {
-                            chatTitle.textContent = `Chat sobre: ${processo.numero_processo}`;
-                        }
-                    } else {
-                        chatTitle.textContent = 'Assistente Jurídico AI';
-                    }
-                });
             } else {
                 processoSelector.style.display = 'none';
                 selectedProcessoId = null;
                 chatTitle.textContent = 'Assistente Jurídico AI';
+                clearSelectedProcesso();
             }
         }
+
+        function filterProcessos(query) {
+            const suggestions = document.getElementById('processoSuggestions');
+
+            if (!query || query.length < 2) {
+                suggestions.style.display = 'none';
+                return;
+            }
+
+            const filtered = processosList.filter(p => {
+                const numero = p.numero_processo || '';
+                const titulo = p.titulo || '';
+                const partes = p.partes || '';
+                const searchText = query.toLowerCase();
+
+                return numero.toLowerCase().includes(searchText) ||
+                       titulo.toLowerCase().includes(searchText) ||
+                       partes.toLowerCase().includes(searchText);
+            });
+
+            renderProcessoSuggestions(filtered);
+        }
+
+        function showProcessoSuggestions() {
+            const searchValue = document.getElementById('processoSearch').value;
+            if (searchValue && searchValue.length >= 2) {
+                filterProcessos(searchValue);
+            } else {
+                // Show all on focus if empty
+                renderProcessoSuggestions(processosList.slice(0, 10));
+            }
+        }
+
+        function renderProcessoSuggestions(processos) {
+            const suggestions = document.getElementById('processoSuggestions');
+
+            if (processos.length === 0) {
+                suggestions.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--gray);">Nenhum processo encontrado</div>';
+                suggestions.style.display = 'block';
+                return;
+            }
+
+            suggestions.innerHTML = processos.slice(0, 10).map(p => `
+                <div onclick="selectProcesso('${p.id}')" style="padding: var(--spacing-sm); border-bottom: 1px solid var(--gray-light); cursor: pointer; transition: var(--transition);" onmouseover="this.style.background='var(--gray-lighter)'" onmouseout="this.style.background='white'">
+                    <div style="font-weight: 600; font-size: 0.875rem; color: var(--primary);">${escapeHtml(p.numero_processo || 'N/A')}</div>
+                    <div style="font-size: 0.75rem; color: var(--gray);">${escapeHtml(p.titulo || 'Sem título')}</div>
+                </div>
+            `).join('');
+
+            suggestions.style.display = 'block';
+        }
+
+        function selectProcesso(processoId) {
+            const processo = processosList.find(p => p.id === processoId);
+
+            if (processo) {
+                selectedProcessoId = processoId;
+
+                // Update UI
+                document.getElementById('processoSearch').value = '';
+                document.getElementById('processoSuggestions').style.display = 'none';
+
+                document.getElementById('selectedProcessoText').textContent =
+                    `${processo.numero_processo} - ${processo.titulo || 'Sem título'}`;
+                document.getElementById('selectedProcesso').style.display = 'block';
+
+                // Update chat title
+                document.getElementById('chatTitle').textContent = `Chat sobre: ${processo.numero_processo}`;
+            }
+        }
+
+        function clearSelectedProcesso() {
+            selectedProcessoId = null;
+            document.getElementById('selectedProcesso').style.display = 'none';
+            document.getElementById('processoSearch').value = '';
+            document.getElementById('processoSuggestions').style.display = 'none';
+            document.getElementById('chatTitle').textContent = 'Assistente Jurídico AI';
+        }
+
+        // Close suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            const suggestions = document.getElementById('processoSuggestions');
+            const searchInput = document.getElementById('processoSearch');
+
+            if (suggestions && searchInput &&
+                !suggestions.contains(e.target) &&
+                e.target !== searchInput) {
+                suggestions.style.display = 'none';
+            }
+        });
 
         function selectQuickAction(action) {
             // Remove active class from all
@@ -496,6 +668,9 @@
 
                 // Add AI response
                 addMessage('ai', response.response, response.sources);
+
+                // Reload sessions (title might have been generated)
+                setTimeout(() => loadSessions(), 500);
 
             } catch (error) {
                 console.error('Chat error:', error);
@@ -602,6 +777,142 @@
         function newSession() {
             currentSessionId = generateSessionId();
             clearChat();
+            // Reload sessions to remove active state
+            renderSessions();
+        }
+
+        async function loadSessions() {
+            try {
+                const response = await apiGet('/chat/sessions');
+                sessionsList = response.sessions || [];
+                renderSessions();
+
+                // If no current session, create new one
+                if (!currentSessionId && sessionsList.length === 0) {
+                    currentSessionId = generateSessionId();
+                } else if (!currentSessionId && sessionsList.length > 0) {
+                    // Load most recent session
+                    loadSession(sessionsList[0].id);
+                }
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                document.getElementById('sessionsList').innerHTML = `
+                    <p style="text-align: center; color: var(--danger); font-size: 0.875rem; padding: 2rem 0;">
+                        Erro ao carregar conversas
+                    </p>
+                `;
+            }
+        }
+
+        function renderSessions() {
+            const container = document.getElementById('sessionsList');
+
+            if (sessionsList.length === 0) {
+                container.innerHTML = `
+                    <p style="text-align: center; color: var(--gray); font-size: 0.875rem; padding: 2rem 0;">
+                        Nenhuma conversa ainda.<br>
+                        Clique em + para começar!
+                    </p>
+                `;
+                return;
+            }
+
+            container.innerHTML = sessionsList.map(session => {
+                const isActive = session.id === currentSessionId;
+                const date = new Date(session.last_message_at || session.updated_at || session.created_at);
+                const dateStr = formatSessionDate(date);
+
+                return `
+                    <div class="session-item ${isActive ? 'active' : ''}" onclick="loadSession('${session.id}')">
+                        <div class="session-title">${escapeHtml(session.titulo)}</div>
+                        <div class="session-meta">
+                            ${dateStr} • ${session.total_mensagens} msg
+                        </div>
+                        <button class="session-delete" onclick="deleteSession(event, '${session.id}')" title="Deletar conversa">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function formatSessionDate(date) {
+            const now = new Date();
+            const diff = now - date;
+            const hours = Math.floor(diff / 1000 / 60 / 60);
+            const days = Math.floor(hours / 24);
+
+            if (hours < 1) return 'Agora';
+            if (hours < 24) return `${hours}h atrás`;
+            if (days === 1) return 'Ontem';
+            if (days < 7) return `${days}d atrás`;
+
+            return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function loadSession(sessionId) {
+            try {
+                currentSessionId = sessionId;
+                renderSessions();
+
+                // Clear current messages
+                const messagesDiv = document.getElementById('chatMessages');
+                messagesDiv.innerHTML = '';
+
+                // Load session history
+                const response = await apiGet(`/chat/history/${sessionId}`);
+                const messages = response.messages || [];
+
+                // Render messages
+                messages.forEach(msg => {
+                    addMessage(
+                        msg.role.toLowerCase() === 'user' ? 'user' : 'ai',
+                        msg.content,
+                        msg.sources || []
+                    );
+                });
+
+                // If no messages, show welcome
+                if (messages.length === 0) {
+                    addMessage('ai', 'Olá! Como posso ajudá-lo hoje?');
+                }
+
+            } catch (error) {
+                console.error('Error loading session:', error);
+                alert('Erro ao carregar conversa.');
+            }
+        }
+
+        async function deleteSession(event, sessionId) {
+            event.stopPropagation();
+
+            if (!confirm('Tem certeza que deseja deletar esta conversa?')) {
+                return;
+            }
+
+            try {
+                await apiDelete(`/chat/sessions/${sessionId}`);
+
+                // Remove from list
+                sessionsList = sessionsList.filter(s => s.id !== sessionId);
+                renderSessions();
+
+                // If deleted current session, create new one
+                if (sessionId === currentSessionId) {
+                    newSession();
+                }
+
+                alert('Conversa deletada com sucesso!');
+            } catch (error) {
+                console.error('Error deleting session:', error);
+                alert('Erro ao deletar conversa.');
+            }
         }
     </script>
 </body>

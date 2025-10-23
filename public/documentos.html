@@ -267,9 +267,121 @@
 
         async function handleFiles(files) {
             for (let file of files) {
-                console.log('Uploading:', file.name);
-                // TODO: Implement actual upload to backend
-                alert(`Upload iniciado: ${file.name}\n\nFuncionalidade será conectada ao backend em breve.`);
+                await uploadFile(file);
+            }
+        }
+
+        async function uploadFile(file) {
+            // Validate file type
+            const validTypes = ['.pdf', '.doc', '.docx'];
+            const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+
+            if (!validTypes.includes(fileExt)) {
+                alert(`Arquivo ${file.name} não é suportado.\nAceitos: PDF, DOC, DOCX`);
+                return;
+            }
+
+            // Validate file size (50MB limit)
+            if (file.size > 50 * 1024 * 1024) {
+                alert(`Arquivo ${file.name} muito grande.\nMáximo: 50MB`);
+                return;
+            }
+
+            // Prompt for processo info
+            const numeroProcesso = prompt('Número do Processo:');
+            if (!numeroProcesso) return;
+
+            const titulo = prompt('Título do Documento:');
+            if (!titulo) return;
+
+            const tipoProcesso = prompt('Tipo (Trabalhista, Civil, Tributário, etc):');
+            if (!tipoProcesso) return;
+
+            // Create FormData
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('numero_processo', numeroProcesso);
+            formData.append('titulo', titulo);
+            formData.append('tipo_processo', tipoProcesso);
+            formData.append('descricao', '');
+
+            try {
+                // Show upload progress
+                const progressDiv = document.createElement('div');
+                progressDiv.innerHTML = `
+                    <div class="file-item" style="background: #f0f9ff;">
+                        <div class="file-info">
+                            <div class="file-icon">
+                                <i class="bi bi-arrow-up-circle"></i>
+                            </div>
+                            <div class="file-details">
+                                <h4>${file.name}</h4>
+                                <p>Enviando... 0%</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('fileList').prepend(progressDiv);
+
+                const response = await fetch(`${API_BASE_URL}/processos/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${getAuthToken()}`
+                    },
+                    body: formData
+                });
+
+                progressDiv.querySelector('p').textContent = 'Processando PDF...';
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Erro ao fazer upload');
+                }
+
+                const data = await response.json();
+
+                // Remove progress div
+                progressDiv.remove();
+
+                if (data.success) {
+                    alert(`✓ Documento enviado com sucesso!\n\nProcesso: ${data.numero_processo}\nStatus: ${data.message}`);
+
+                    // Add to list
+                    const newFileDiv = document.createElement('div');
+                    newFileDiv.innerHTML = `
+                        <div class="file-item">
+                            <div class="file-info">
+                                <div class="file-icon">
+                                    <i class="bi bi-file-pdf"></i>
+                                </div>
+                                <div class="file-details">
+                                    <h4>${file.name}</h4>
+                                    <p>Agora - ${(file.size / 1024 / 1024).toFixed(2)} MB - OCR ${data.status === 'completed' ? 'Processado' : 'Pendente'}</p>
+                                </div>
+                            </div>
+                            <div class="file-actions">
+                                <button class="btn btn-outline btn-sm" onclick="window.open('${API_BASE_URL}/processos/${data.processo_id}/download', '_blank')">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <button class="btn btn-outline btn-sm" onclick="downloadDocument('${data.processo_id}')">
+                                    <i class="bi bi-download"></i>
+                                </button>
+                                <button class="btn btn-primary btn-sm" disabled>
+                                    <i class="bi bi-cpu"></i>
+                                    ${data.status === 'completed' ? 'OCR OK' : 'Processando...'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('fileList').prepend(newFileDiv);
+                } else {
+                    alert(`Erro: ${data.error}\n\n${data.message}`);
+                }
+
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert(`Erro ao fazer upload: ${error.message}`);
+                progressDiv?.remove();
             }
         }
 

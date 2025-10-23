@@ -291,7 +291,8 @@
 
         <!-- Filters -->
         <div class="filters fade-in">
-            <div class="filter-row">
+            <!-- Basic Filters -->
+            <div class="filter-row" style="margin-bottom: var(--spacing-md);">
                 <div class="form-group">
                     <label>Buscar</label>
                     <input type="text" class="form-control" id="searchInput" placeholder="Número do processo, parte...">
@@ -309,15 +310,126 @@
                     <label>Tipo</label>
                     <select class="form-control" id="tipoFilter">
                         <option value="">Todos</option>
-                        <option value="recurso">Recurso Inominado</option>
-                        <option value="procedimento">Procedimento Comum</option>
+                        <option value="Trabalhista">Trabalhista</option>
+                        <option value="Civil">Civil</option>
+                        <option value="Tributário">Tributário</option>
+                        <option value="Criminal">Criminal</option>
+                        <option value="Administrativo">Administrativo</option>
                     </select>
+                </div>
+                <div class="form-group" style="align-self: end;">
+                    <button class="btn btn-outline" onclick="toggleAdvancedFilters()" id="advancedToggle">
+                        <i class="bi bi-chevron-down"></i>
+                        Avançado
+                    </button>
                 </div>
                 <div class="form-group" style="align-self: end;">
                     <button class="btn btn-primary" onclick="applyFilters()">
                         <i class="bi bi-funnel"></i>
                         Filtrar
                     </button>
+                </div>
+            </div>
+
+            <!-- Advanced Filters (collapsible) -->
+            <div id="advancedFilters" style="display: none; padding-top: var(--spacing-md); border-top: 2px solid var(--gray-light);">
+                <!-- Geographic Filters -->
+                <div style="margin-bottom: var(--spacing-md);">
+                    <h4 style="font-size: 0.875rem; font-weight: 600; margin-bottom: var(--spacing-sm); color: var(--primary);">
+                        <i class="bi bi-geo-alt"></i> Filtros Geográficos
+                    </h4>
+                    <div class="filter-row">
+                        <div class="form-group">
+                            <label>Estado</label>
+                            <select class="form-control" id="estadoFilter">
+                                <option value="">Todos</option>
+                                <option value="SP">São Paulo</option>
+                                <option value="RJ">Rio de Janeiro</option>
+                                <option value="MG">Minas Gerais</option>
+                                <option value="RS">Rio Grande do Sul</option>
+                                <option value="BA">Bahia</option>
+                                <option value="PR">Paraná</option>
+                                <option value="SC">Santa Catarina</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tribunal</label>
+                            <select class="form-control" id="tribunalFilter">
+                                <option value="">Todos</option>
+                                <option value="STF">STF - Supremo Tribunal Federal</option>
+                                <option value="STJ">STJ - Superior Tribunal de Justiça</option>
+                                <option value="TST">TST - Tribunal Superior do Trabalho</option>
+                                <option value="TRF1">TRF1 - Tribunal Regional Federal 1ª Região</option>
+                                <option value="TRT">TRT - Tribunal Regional do Trabalho</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Comarca</label>
+                            <input type="text" class="form-control" id="comarcaFilter" placeholder="Ex: São Paulo">
+                        </div>
+                        <div class="form-group">
+                            <label>Vara</label>
+                            <input type="text" class="form-control" id="varaFilter" placeholder="Ex: 1ª Vara Cível">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Temporal Filters -->
+                <div style="margin-bottom: var(--spacing-md);">
+                    <h4 style="font-size: 0.875rem; font-weight: 600; margin-bottom: var(--spacing-sm); color: var(--primary);">
+                        <i class="bi bi-calendar"></i> Filtros Temporais
+                    </h4>
+                    <div class="filter-row">
+                        <div class="form-group">
+                            <label>Data Início (de)</label>
+                            <input type="date" class="form-control" id="dataInicioFrom">
+                        </div>
+                        <div class="form-group">
+                            <label>Data Início (até)</label>
+                            <input type="date" class="form-control" id="dataInicioTo">
+                        </div>
+                        <div class="form-group">
+                            <label>Status OCR</label>
+                            <select class="form-control" id="ocrStatusFilter">
+                                <option value="">Todos</option>
+                                <option value="COMPLETED">Processado</option>
+                                <option value="PENDING">Pendente</option>
+                                <option value="FAILED">Falhou</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status Embedding</label>
+                            <select class="form-control" id="embeddingStatusFilter">
+                                <option value="">Todos</option>
+                                <option value="COMPLETED">Processado</option>
+                                <option value="PENDING">Pendente</option>
+                                <option value="FAILED">Falhou</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Filters -->
+                <div>
+                    <h4 style="font-size: 0.875rem; font-weight: 600; margin-bottom: var(--spacing-sm); color: var(--primary);">
+                        <i class="bi bi-currency-dollar"></i> Filtros Financeiros
+                    </h4>
+                    <div class="filter-row">
+                        <div class="form-group">
+                            <label>Valor da Causa (mín)</label>
+                            <input type="number" class="form-control" id="valorMin" placeholder="R$ 0,00" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Valor da Causa (máx)</label>
+                            <input type="number" class="form-control" id="valorMax" placeholder="R$ 999999,99" step="0.01">
+                        </div>
+                        <div class="form-group" style="align-self: end;">
+                            <button class="btn btn-outline" onclick="clearFilters()">
+                                <i class="bi bi-x-circle"></i>
+                                Limpar Filtros
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -702,19 +814,91 @@
             window.location.href = `chat.html?processo_id=${processoId}`;
         }
 
+        function toggleAdvancedFilters() {
+            const advancedDiv = document.getElementById('advancedFilters');
+            const toggleBtn = document.getElementById('advancedToggle');
+
+            if (advancedDiv.style.display === 'none') {
+                advancedDiv.style.display = 'block';
+                toggleBtn.innerHTML = '<i class="bi bi-chevron-up"></i> Avançado';
+            } else {
+                advancedDiv.style.display = 'none';
+                toggleBtn.innerHTML = '<i class="bi bi-chevron-down"></i> Avançado';
+            }
+        }
+
+        function clearFilters() {
+            // Clear basic filters
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('tipoFilter').value = '';
+
+            // Clear advanced filters
+            document.getElementById('estadoFilter').value = '';
+            document.getElementById('tribunalFilter').value = '';
+            document.getElementById('comarcaFilter').value = '';
+            document.getElementById('varaFilter').value = '';
+            document.getElementById('dataInicioFrom').value = '';
+            document.getElementById('dataInicioTo').value = '';
+            document.getElementById('ocrStatusFilter').value = '';
+            document.getElementById('embeddingStatusFilter').value = '';
+            document.getElementById('valorMin').value = '';
+            document.getElementById('valorMax').value = '';
+
+            // Reapply filters (will show all)
+            applyFilters();
+        }
+
         function applyFilters() {
+            // Basic filters
             const search = document.getElementById('searchInput').value.toLowerCase();
             const status = document.getElementById('statusFilter').value;
             const tipo = document.getElementById('tipoFilter').value;
 
+            // Advanced geographic filters
+            const estado = document.getElementById('estadoFilter').value;
+            const tribunal = document.getElementById('tribunalFilter').value;
+            const comarca = document.getElementById('comarcaFilter').value.toLowerCase();
+            const vara = document.getElementById('varaFilter').value.toLowerCase();
+
+            // Advanced temporal filters
+            const dataFrom = document.getElementById('dataInicioFrom').value;
+            const dataTo = document.getElementById('dataInicioTo').value;
+            const ocrStatus = document.getElementById('ocrStatusFilter').value;
+            const embeddingStatus = document.getElementById('embeddingStatusFilter').value;
+
+            // Advanced financial filters
+            const valorMin = parseFloat(document.getElementById('valorMin').value) || 0;
+            const valorMax = parseFloat(document.getElementById('valorMax').value) || Infinity;
+
             const filtered = processos.filter(p => {
+                // Basic filters
                 const matchSearch = !search ||
                     p.numero.toLowerCase().includes(search) ||
-                    p.partes.toLowerCase().includes(search);
+                    (p.partes && p.partes.toLowerCase().includes(search));
                 const matchStatus = !status || p.status === status;
-                const matchTipo = !tipo || p.tipo.toLowerCase().includes(tipo);
+                const matchTipo = !tipo || (p.tipo && p.tipo.toLowerCase().includes(tipo.toLowerCase()));
 
-                return matchSearch && matchStatus && matchTipo;
+                // Geographic filters
+                const matchEstado = !estado || (p.estado && p.estado === estado);
+                const matchTribunal = !tribunal || (p.tribunal && p.tribunal.includes(tribunal));
+                const matchComarca = !comarca || (p.comarca && p.comarca.toLowerCase().includes(comarca));
+                const matchVara = !vara || (p.vara && p.vara.toLowerCase().includes(vara));
+
+                // Temporal filters
+                const matchDataFrom = !dataFrom || (p.dataAjuizamento && p.dataAjuizamento >= dataFrom);
+                const matchDataTo = !dataTo || (p.dataAjuizamento && p.dataAjuizamento <= dataTo);
+                const matchOcrStatus = !ocrStatus || (p.ocrStatus && p.ocrStatus === ocrStatus);
+                const matchEmbeddingStatus = !embeddingStatus || (p.embeddingStatus && p.embeddingStatus === embeddingStatus);
+
+                // Financial filters
+                const valor = parseFloat(p.valorCausa) || 0;
+                const matchValor = valor >= valorMin && valor <= valorMax;
+
+                return matchSearch && matchStatus && matchTipo &&
+                       matchEstado && matchTribunal && matchComarca && matchVara &&
+                       matchDataFrom && matchDataTo && matchOcrStatus && matchEmbeddingStatus &&
+                       matchValor;
             });
 
             renderProcessos(filtered);
