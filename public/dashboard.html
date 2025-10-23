@@ -268,10 +268,17 @@
                 // Load stats from backend
                 const statsResponse = await apiGet('/processos/stats');
                 if (statsResponse.stats) {
-                    document.getElementById('totalProcessos').textContent = statsResponse.stats.total_processos || 0;
-                    document.getElementById('prazosProximos').textContent = statsResponse.stats.prazos_pendentes || 0;
-                    document.getElementById('totalDocs').textContent = statsResponse.stats.total_documentos || 0;
-                    document.getElementById('sumulas').textContent = statsResponse.stats.sumulas_knowledge_base || 0;
+                    const totalProcessosEl = document.getElementById('totalProcessos');
+                    if (totalProcessosEl) totalProcessosEl.textContent = statsResponse.stats.total_processos || 0;
+
+                    const prazosProximosEl = document.getElementById('prazosProximos');
+                    if (prazosProximosEl) prazosProximosEl.textContent = statsResponse.stats.prazos_pendentes || 0;
+
+                    const totalDocsEl = document.getElementById('totalDocs');
+                    if (totalDocsEl) totalDocsEl.textContent = statsResponse.stats.total_documentos || 0;
+
+                    const sumulasEl = document.getElementById('sumulas');
+                    if (sumulasEl) sumulasEl.textContent = statsResponse.stats.sumulas_knowledge_base || 0;
                 }
 
                 // Load recent processes from real API
@@ -281,9 +288,15 @@
                 });
 
                 const processos = processosResponse.hits || [];
+                const processosTableEl = document.getElementById('processosTable');
+
+                if (!processosTableEl) {
+                    console.warn('processosTable element not found');
+                    return;
+                }
 
                 if (processos.length === 0) {
-                    document.getElementById('processosTable').innerHTML = `
+                    processosTableEl.innerHTML = `
                         <tr>
                             <td colspan="6" class="text-center text-muted">
                                 <i class="bi bi-inbox"></i>
@@ -295,7 +308,7 @@
                 }
 
                 // Render real processes
-                document.getElementById('processosTable').innerHTML = processos.map(p => {
+                processosTableEl.innerHTML = processos.map(p => {
                     const statusClass = getStatusBadgeClass(p.status || 'ativo');
                     const statusText = (p.status || 'ativo').toUpperCase();
                     const updateTime = formatRelativeTime(p.updated_at || p.created_at);
@@ -318,14 +331,17 @@
 
             } catch (error) {
                 console.error('Error loading dashboard:', error);
-                document.getElementById('processosTable').innerHTML = `
-                    <tr>
-                        <td colspan="6" class="text-center text-muted" style="color: var(--danger);">
-                            <i class="bi bi-exclamation-triangle"></i>
+                const processosTableEl = document.getElementById('processosTable');
+                if (processosTableEl) {
+                    processosTableEl.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center text-muted" style="color: var(--danger);">
+                                <i class="bi bi-exclamation-triangle"></i>
                             <br>Erro ao carregar processos. Tente novamente.
                         </td>
                     </tr>
-                `;
+                    `;
+                }
             }
         }
 
@@ -410,8 +426,11 @@
                 const stats = await apiGet('/processos/stats');
 
                 // Atualizar cards principais
-                document.getElementById('totalProcessos').textContent = stats.total_processos || 0;
-                document.getElementById('prazosProximos').textContent = stats.prazos_urgentes || 0;
+                const totalProcessosEl = document.getElementById('totalProcessos');
+                if (totalProcessosEl) totalProcessosEl.textContent = stats.total_processos || 0;
+
+                const prazosProximosEl = document.getElementById('prazosProximos');
+                if (prazosProximosEl) prazosProximosEl.textContent = stats.prazos_urgentes || 0;
 
                 // totalDocs e sumulas vem de outros endpoints - ignorar por enquanto
                 // document.getElementById('totalDocs').textContent = 0;
