@@ -155,6 +155,79 @@
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
+
+        /* Upload Modal Styles */
+        .drop-zone {
+            border: 2px dashed var(--primary);
+            border-radius: var(--radius-md);
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: rgba(102, 126, 234, 0.02);
+        }
+
+        .drop-zone:hover {
+            border-color: var(--primary-dark);
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .drop-zone.dragover {
+            border-color: var(--primary-dark);
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-light);
+            border-radius: var(--radius-md);
+            margin-bottom: 1rem;
+        }
+
+        .file-info i {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+
+        .file-info span:first-of-type {
+            flex: 1;
+            font-weight: 600;
+        }
+
+        .file-info span:last-of-type {
+            color: var(--gray);
+            font-size: 0.875rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--gray-light);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        .btn-icon {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--gray);
+            padding: 0.25rem;
+            transition: var(--transition);
+        }
+
+        .btn-icon:hover {
+            color: var(--error);
+        }
     </style>
 </head>
 <body>
@@ -209,9 +282,9 @@
                     <i class="bi bi-arrow-clockwise"></i>
                     Atualizar
                 </button>
-                <button class="btn btn-primary">
+                <button class="btn btn-primary" onclick="openUploadModal()">
                     <i class="bi bi-plus-circle"></i>
-                    Importar Processo
+                    Novo Processo
                 </button>
             </div>
         </div>
@@ -252,6 +325,79 @@
         <!-- Processos List -->
         <div id="processosList" class="fade-in" style="animation-delay: 0.1s;">
             <!-- Processos will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Upload Processo Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Novo Processo</h2>
+                <button class="modal-close" onclick="closeUploadModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm" onsubmit="handleUpload(event)">
+                    <!-- Drag and Drop Area -->
+                    <div id="dropZone" class="drop-zone" onclick="document.getElementById('pdfFile').click()">
+                        <i class="bi bi-file-earmark-pdf" style="font-size: 3rem; color: var(--primary);"></i>
+                        <p style="margin: 1rem 0 0.5rem 0; font-weight: 600;">Arraste o PDF aqui ou clique para selecionar</p>
+                        <p style="font-size: 0.875rem; color: var(--gray);">Máximo 100MB</p>
+                        <input type="file" id="pdfFile" accept=".pdf" style="display: none;" onchange="handleFileSelect(event)" required>
+                    </div>
+
+                    <div id="fileInfo" class="file-info" style="display: none;">
+                        <i class="bi bi-file-earmark-pdf"></i>
+                        <span id="fileName"></span>
+                        <span id="fileSize"></span>
+                        <button type="button" onclick="clearFile()" class="btn-icon">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="numeroProcesso">Número do Processo *</label>
+                        <input type="text" id="numeroProcesso" class="form-control" placeholder="0000000-00.0000.0.00.0000" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tituloProcesso">Título *</label>
+                        <input type="text" id="tituloProcesso" class="form-control" placeholder="Ex: Ação Trabalhista" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tipoProcesso">Tipo de Processo *</label>
+                        <select id="tipoProcesso" class="form-control" required>
+                            <option value="">Selecione...</option>
+                            <option value="Trabalhista">Trabalhista</option>
+                            <option value="Civil">Civil</option>
+                            <option value="Tributário">Tributário</option>
+                            <option value="Criminal">Criminal</option>
+                            <option value="Administrativo">Administrativo</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="descricaoProcesso">Descrição</label>
+                        <textarea id="descricaoProcesso" class="form-control" rows="3" placeholder="Descrição opcional do processo"></textarea>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" onclick="closeUploadModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="uploadBtn">
+                            <i class="bi bi-upload"></i>
+                            Fazer Upload
+                        </button>
+                    </div>
+                </form>
+
+                <div id="uploadProgress" style="display: none; margin-top: 1rem;">
+                    <p style="margin-bottom: 0.5rem;">Processando...</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                    <p id="uploadStatus" style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--gray);"></p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -394,6 +540,147 @@
             document.getElementById('pdfViewerModal').classList.add('active');
             document.getElementById('downloadPdfBtn').onclick = () => downloadPdf(numero, url);
         }
+
+        // Upload Modal Functions
+        let selectedFile = null;
+
+        function openUploadModal() {
+            document.getElementById('uploadModal').classList.add('active');
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.remove('active');
+            document.getElementById('uploadForm').reset();
+            clearFile();
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.type !== 'application/pdf') {
+                    alert('Por favor, selecione apenas arquivos PDF');
+                    return;
+                }
+                if (file.size > 100 * 1024 * 1024) {
+                    alert('Arquivo muito grande. Máximo 100MB');
+                    return;
+                }
+                selectedFile = file;
+                showFileInfo(file);
+            }
+        }
+
+        function showFileInfo(file) {
+            document.getElementById('dropZone').style.display = 'none';
+            document.getElementById('fileInfo').style.display = 'flex';
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+        }
+
+        function clearFile() {
+            selectedFile = null;
+            document.getElementById('pdfFile').value = '';
+            document.getElementById('dropZone').style.display = 'block';
+            document.getElementById('fileInfo').style.display = 'none';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        async function handleUpload(event) {
+            event.preventDefault();
+
+            if (!selectedFile) {
+                alert('Por favor, selecione um arquivo PDF');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('numero_processo', document.getElementById('numeroProcesso').value);
+            formData.append('titulo', document.getElementById('tituloProcesso').value);
+            formData.append('tipo_processo', document.getElementById('tipoProcesso').value);
+            formData.append('descricao', document.getElementById('descricaoProcesso').value);
+
+            // Show progress
+            document.getElementById('uploadForm').style.display = 'none';
+            document.getElementById('uploadProgress').style.display = 'block';
+            document.getElementById('uploadStatus').textContent = 'Fazendo upload...';
+            document.getElementById('progressFill').style.width = '30%';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/processos/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${getAuthToken()}`
+                    },
+                    body: formData
+                });
+
+                document.getElementById('uploadStatus').textContent = 'Processando PDF...';
+                document.getElementById('progressFill').style.width = '60%';
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Erro ao fazer upload');
+                }
+
+                const data = await response.json();
+
+                document.getElementById('uploadStatus').textContent = 'Gerando embeddings...';
+                document.getElementById('progressFill').style.width = '90%';
+
+                // Wait a bit for effect
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                document.getElementById('progressFill').style.width = '100%';
+
+                if (data.success) {
+                    alert(`Processo ${data.numero_processo} criado com sucesso!\n\nStatus: ${data.message}`);
+                    closeUploadModal();
+                    // Reload processos list
+                    window.location.reload();
+                } else {
+                    alert(`Erro: ${data.error}\n\n${data.message}`);
+                }
+
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert(`Erro ao fazer upload: ${error.message}`);
+            } finally {
+                // Reset form
+                document.getElementById('uploadForm').style.display = 'block';
+                document.getElementById('uploadProgress').style.display = 'none';
+                document.getElementById('progressFill').style.width = '0%';
+            }
+        }
+
+        // Drag and drop handlers
+        const dropZone = document.getElementById('dropZone');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                document.getElementById('pdfFile').files = e.dataTransfer.files;
+                handleFileSelect({ target: { files: [file] } });
+            }
+        });
 
         function closePdfViewer() {
             document.getElementById('pdfViewerModal').classList.remove('active');
