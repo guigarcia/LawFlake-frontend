@@ -483,27 +483,18 @@
 
         async function loadProcessos() {
             try {
-                const response = await apiGet('/processos/stats');
-
-                // Fetch actual processos list (max 100 per API limit)
+                // Fetch processos list for autocomplete
                 const processosResponse = await apiPost('/processos/search', {
                     size: 100,
                     from: 0
                 });
 
                 processosList = processosResponse.hits || [];
+                console.log(`Loaded ${processosList.length} processos for autocomplete`);
 
-                const select = document.getElementById('processoSelect');
-                select.innerHTML = '<option value="">Selecione um processo...</option>';
-
-                processosList.forEach(p => {
-                    const option = document.createElement('option');
-                    option.value = p.id;
-                    option.textContent = `${p.numero_processo} - ${p.titulo || 'Sem título'}`;
-                    select.appendChild(option);
-                });
             } catch (error) {
                 console.error('Error loading processos:', error);
+                processosList = []; // Fail gracefully
             }
         }
 
@@ -516,17 +507,11 @@
                 document.querySelector('input[name="chatContext"][value="especifico"]').checked = true;
                 handleContextChange();
 
-                // Select the processo
+                // Find and select the processo
                 setTimeout(() => {
-                    const select = document.getElementById('processoSelect');
-                    select.value = processoId;
-                    selectedProcessoId = processoId;
-
-                    // Update chat title
                     const processo = processosList.find(p => p.id === processoId);
                     if (processo) {
-                        document.getElementById('chatTitle').textContent =
-                            `Chat sobre: ${processo.numero_processo}`;
+                        selectProcesso(processoId);
                     }
                 }, 500);
             }
@@ -815,12 +800,29 @@
         }
 
         function newSession() {
+            // Generate new session ID
             currentSessionId = generateSessionId();
-            clearChat();
+
+            // Clear chat display
+            const messagesDiv = document.getElementById('chatMessages');
+            messagesDiv.innerHTML = `
+                <div class="message ai">
+                    <div class="message-avatar">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <strong style="display: block; margin-bottom: 0.5rem;">LawFlake AI</strong>
+                        <p style="margin: 0;">Nova conversa iniciada! Como posso ajudá-lo?</p>
+                    </div>
+                </div>
+            `;
+
             // Update active state without reloading list
             document.querySelectorAll('.session-item').forEach(item => {
                 item.classList.remove('active');
             });
+
+            console.log('New session created:', currentSessionId);
         }
 
         async function loadSessions() {
