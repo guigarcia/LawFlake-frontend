@@ -511,9 +511,9 @@
                             <i class="bi bi-download"></i>
                             Download
                         </button>
-                        <button class="btn btn-outline btn-sm" onclick="analyzeProcesso('${p.numero}')">
+                        <button class="btn btn-primary btn-sm" onclick="chatAboutProcesso('${p.id || p.numero}')">
                             <i class="bi bi-chat-dots"></i>
-                            Analisar IA
+                            Chat sobre este Processo
                         </button>
                     </div>
                 </div>
@@ -697,8 +697,9 @@
             link.click();
         }
 
-        function analyzeProcesso(numero) {
-            window.location.href = `chat.html?processo=${numero}&action=analise`;
+        function chatAboutProcesso(processoId) {
+            // Redirect to chat page with processo_id parameter
+            window.location.href = `chat.html?processo_id=${processoId}`;
         }
 
         function applyFilters() {

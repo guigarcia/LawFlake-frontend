@@ -197,7 +197,7 @@
         <div class="page-header">
             <div>
                 <h1 class="page-title">Chat com IA Jurídica</h1>
-                <p class="page-subtitle">Assistente inteligente powered by Snowflake Cortex & Gemini 1.5</p>
+                <p class="page-subtitle">Assistente inteligente powered by Snowflake Cortex AI</p>
             </div>
             <div class="page-actions">
                 <button class="btn btn-outline" onclick="clearChat()">
@@ -262,6 +262,28 @@
                 </div>
 
                 <div class="chat-input-container">
+                    <!-- Context Selector -->
+                    <div style="margin-bottom: var(--spacing-md); padding-bottom: var(--spacing-md); border-bottom: 1px solid var(--gray-light);">
+                        <div style="display: flex; align-items: center; gap: var(--spacing-lg);">
+                            <label style="font-size: 0.875rem; font-weight: 600; color: var(--gray-dark);">
+                                <i class="bi bi-filter-circle"></i> Contexto:
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="radio" name="chatContext" value="geral" checked onchange="handleContextChange()">
+                                <span style="font-size: 0.875rem;">Todos os processos</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="radio" name="chatContext" value="especifico" onchange="handleContextChange()">
+                                <span style="font-size: 0.875rem;">Processo específico</span>
+                            </label>
+                        </div>
+                        <div id="processoSelector" style="margin-top: var(--spacing-md); display: none;">
+                            <select id="processoSelect" class="form-input" style="width: 100%; padding: var(--spacing-sm);">
+                                <option value="">Carregando processos...</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="input-wrapper">
                         <textarea
                             id="chatInput"
@@ -284,14 +306,98 @@
     <script>
         let currentSessionId = null;
         let isLoading = false;
+        let selectedProcessoId = null;
+        let processosList = [];
 
         document.addEventListener('DOMContentLoaded', () => {
             checkAuth();
             currentSessionId = generateSessionId();
+            loadProcessos();
+            checkUrlParameters();
         });
 
         function generateSessionId() {
             return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        async function loadProcessos() {
+            try {
+                const response = await apiGet('/processos/stats');
+
+                // Fetch actual processos list
+                const processosResponse = await apiPost('/processos/search', {
+                    size: 1000,
+                    from_: 0
+                });
+
+                processosList = processosResponse.hits || [];
+
+                const select = document.getElementById('processoSelect');
+                select.innerHTML = '<option value="">Selecione um processo...</option>';
+
+                processosList.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.id;
+                    option.textContent = `${p.numero_processo} - ${p.titulo || 'Sem título'}`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading processos:', error);
+            }
+        }
+
+        function checkUrlParameters() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const processoId = urlParams.get('processo_id');
+
+            if (processoId) {
+                // Switch to specific context
+                document.querySelector('input[name="chatContext"][value="especifico"]').checked = true;
+                handleContextChange();
+
+                // Select the processo
+                setTimeout(() => {
+                    const select = document.getElementById('processoSelect');
+                    select.value = processoId;
+                    selectedProcessoId = processoId;
+
+                    // Update chat title
+                    const processo = processosList.find(p => p.id === processoId);
+                    if (processo) {
+                        document.getElementById('chatTitle').textContent =
+                            `Chat sobre: ${processo.numero_processo}`;
+                    }
+                }, 500);
+            }
+        }
+
+        function handleContextChange() {
+            const context = document.querySelector('input[name="chatContext"]:checked').value;
+            const processoSelector = document.getElementById('processoSelector');
+            const chatTitle = document.getElementById('chatTitle');
+
+            if (context === 'especifico') {
+                processoSelector.style.display = 'block';
+
+                // Get selected processo
+                const select = document.getElementById('processoSelect');
+                select.addEventListener('change', function() {
+                    selectedProcessoId = this.value;
+
+                    if (selectedProcessoId) {
+                        const processo = processosList.find(p => p.id === selectedProcessoId);
+                        if (processo) {
+                            chatTitle.textContent = `Chat sobre: ${processo.numero_processo}`;
+                        }
+                    } else {
+                        chatTitle.textContent = 'Assistente Jurídico AI';
+                    }
+                });
+            } else {
+                processoSelector.style.display = 'none';
+                selectedProcessoId = null;
+                chatTitle.textContent = 'Assistente Jurídico AI';
+            }
         }
 
         function selectQuickAction(action) {
@@ -343,10 +449,17 @@
 
             try {
                 // Call backend API
-                const response = await apiPost('/chat/message', {
+                const requestBody = {
                     message: message,
                     session_id: currentSessionId
-                });
+                };
+
+                // Add processo_id if specific context is selected
+                if (selectedProcessoId) {
+                    requestBody.processo_id = selectedProcessoId;
+                }
+
+                const response = await apiPost('/chat/message', requestBody);
 
                 // Remove loading
                 removeLoadingMessage(loadingId);
