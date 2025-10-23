@@ -255,10 +255,6 @@
                 <i class="bi bi-file-earmark-text-fill"></i>
                 Documentos
             </a>
-            <a href="relatorios.html" class="nav-link">
-                <i class="bi bi-graph-up"></i>
-                Relatórios
-            </a>
         </nav>
 
         <div style="margin-top: auto; padding-top: 2rem; border-top: 1px solid var(--gray-light);">
@@ -286,7 +282,7 @@
                     <i class="bi bi-arrow-clockwise"></i>
                     Atualizar
                 </button>
-                <button class="btn btn-primary" onclick="openUploadModal()">
+                <button class="btn btn-primary" onclick="window.location.href='documentos.html'">
                     <i class="bi bi-plus-circle"></i>
                     Novo Processo
                 </button>
@@ -441,79 +437,6 @@
         <!-- Processos List -->
         <div id="processosList" class="fade-in" style="animation-delay: 0.1s;">
             <!-- Processos will be loaded here -->
-        </div>
-    </div>
-
-    <!-- Upload Processo Modal -->
-    <div id="uploadModal" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="modal-header">
-                <h2>Novo Processo</h2>
-                <button class="modal-close" onclick="closeUploadModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="uploadForm" onsubmit="handleUpload(event)">
-                    <!-- Drag and Drop Area -->
-                    <div id="dropZone" class="drop-zone" onclick="document.getElementById('pdfFile').click()">
-                        <i class="bi bi-file-earmark-pdf" style="font-size: 3rem; color: var(--primary);"></i>
-                        <p style="margin: 1rem 0 0.5rem 0; font-weight: 600;">Arraste o PDF aqui ou clique para selecionar</p>
-                        <p style="font-size: 0.875rem; color: var(--gray);">Máximo 100MB</p>
-                        <input type="file" id="pdfFile" accept=".pdf" style="display: none;" onchange="handleFileSelect(event)" required>
-                    </div>
-
-                    <div id="fileInfo" class="file-info" style="display: none;">
-                        <i class="bi bi-file-earmark-pdf"></i>
-                        <span id="fileName"></span>
-                        <span id="fileSize"></span>
-                        <button type="button" onclick="clearFile()" class="btn-icon">
-                            <i class="bi bi-x"></i>
-                        </button>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="numeroProcesso">Número do Processo *</label>
-                        <input type="text" id="numeroProcesso" class="form-control" placeholder="0000000-00.0000.0.00.0000" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="tituloProcesso">Título *</label>
-                        <input type="text" id="tituloProcesso" class="form-control" placeholder="Ex: Ação Trabalhista" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="tipoProcesso">Tipo de Processo *</label>
-                        <select id="tipoProcesso" class="form-control" required>
-                            <option value="">Selecione...</option>
-                            <option value="Trabalhista">Trabalhista</option>
-                            <option value="Civil">Civil</option>
-                            <option value="Tributário">Tributário</option>
-                            <option value="Criminal">Criminal</option>
-                            <option value="Administrativo">Administrativo</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="descricaoProcesso">Descrição</label>
-                        <textarea id="descricaoProcesso" class="form-control" rows="3" placeholder="Descrição opcional do processo"></textarea>
-                    </div>
-
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-outline" onclick="closeUploadModal()">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" id="uploadBtn">
-                            <i class="bi bi-upload"></i>
-                            Fazer Upload
-                        </button>
-                    </div>
-                </form>
-
-                <div id="uploadProgress" style="display: none; margin-top: 1rem;">
-                    <p style="margin-bottom: 0.5rem;">Processando...</p>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
-                    </div>
-                    <p id="uploadStatus" style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--gray);"></p>
-                </div>
-            </div>
         </div>
     </div>
 

@@ -114,10 +114,6 @@
                 <i class="bi bi-file-earmark-text-fill"></i>
                 Documentos
             </a>
-            <a href="relatorios.html" class="nav-link">
-                <i class="bi bi-graph-up"></i>
-                Relatórios
-            </a>
         </nav>
 
         <div style="margin-top: auto; padding-top: 2rem; border-top: 1px solid var(--gray-light);">
@@ -223,8 +219,80 @@
             </form>
         </div>
 
+        <!-- DataJud Integration -->
+        <div class="card mb-4 fade-in" style="animation-delay: 0.3s;">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="bi bi-building"></i>
+                    Integração DataJud (CNJ)
+                </h2>
+                <p style="margin: var(--spacing-sm) 0 0; color: var(--gray); font-size: 0.875rem;">
+                    Configure o CNPJ ou CPF para sincronizar automaticamente processos da base DataJud
+                </p>
+            </div>
+            <form id="datajudForm" onsubmit="saveDataJudConfig(event)">
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="cnpjMonitorado">CNPJ Monitorado</label>
+                        <input type="text" id="cnpjMonitorado" placeholder="00.000.000/0000-00" maxlength="18">
+                        <small style="color: var(--gray); font-size: 0.75rem;">
+                            CNPJ da empresa para buscar processos automaticamente
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label for="cpfMonitorado">CPF Alternativo</label>
+                        <input type="text" id="cpfMonitorado" placeholder="000.000.000-00" maxlength="14">
+                        <small style="color: var(--gray); font-size: 0.75rem;">
+                            Opcional: CPF para buscar processos pessoais
+                        </small>
+                    </div>
+                </div>
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="datajudSyncEnabled">
+                            <input type="checkbox" id="datajudSyncEnabled" style="width: auto; margin-right: 0.5rem;">
+                            Ativar sincronização automática
+                        </label>
+                        <small style="color: var(--gray); font-size: 0.75rem; display: block; margin-top: 0.25rem;">
+                            Buscar novos processos periodicamente
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label for="datajudSyncFrequency">Frequência</label>
+                        <select id="datajudSyncFrequency">
+                            <option value="daily">Diariamente (2h da manhã)</option>
+                            <option value="weekly">Semanalmente (Segundas)</option>
+                            <option value="monthly">Mensalmente (Dia 1)</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="datajudStatus" style="padding: var(--spacing-md); background: var(--gray-lighter); border-radius: var(--radius-sm); margin-bottom: var(--spacing-md); display: none;">
+                    <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-xs);">
+                        <i class="bi bi-info-circle" style="color: var(--primary);"></i>
+                        <strong>Status da Sincronização</strong>
+                    </div>
+                    <p id="datajudLastSync" style="margin: 0; font-size: 0.875rem; color: var(--gray);">
+                        Última sincronização: <span id="lastSyncDate">Nunca</span>
+                    </p>
+                    <p id="datajudTotalSynced" style="margin: 0.25rem 0 0; font-size: 0.875rem; color: var(--gray);">
+                        Total de processos sincronizados: <span id="totalSynced">0</span>
+                    </p>
+                </div>
+                <div style="display: flex; gap: var(--spacing-sm);">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i>
+                        Salvar Configuração
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="testDataJudSync()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Testar Sincronização Agora
+                    </button>
+                </div>
+            </form>
+        </div>
+
         <!-- Preferences -->
-        <div class="card fade-in" style="animation-delay: 0.3s;">
+        <div class="card fade-in" style="animation-delay: 0.4s;">
             <div class="card-header">
                 <h2 class="card-title">
                     <i class="bi bi-gear"></i>
@@ -365,6 +433,108 @@
                 alert('Avatar atualizado!\n\nUpload para servidor será implementado.');
             }
         }
+
+        // DataJud Configuration Functions
+        async function loadDataJudConfig() {
+            try {
+                const user = getUser();
+                const companyId = user?.company_id;
+
+                if (!companyId) {
+                    console.warn('No company_id found');
+                    return;
+                }
+
+                // TODO: Implement API call to fetch company DataJud config
+                // const response = await apiGet(`/companies/${companyId}/datajud-config`);
+
+                // For now, show placeholder message
+                console.log('Loading DataJud config for company:', companyId);
+
+                // Show status section
+                document.getElementById('datajudStatus').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading DataJud config:', error);
+            }
+        }
+
+        async function saveDataJudConfig(event) {
+            event.preventDefault();
+
+            const cnpj = document.getElementById('cnpjMonitorado').value;
+            const cpf = document.getElementById('cpfMonitorado').value;
+            const syncEnabled = document.getElementById('datajudSyncEnabled').checked;
+            const syncFrequency = document.getElementById('datajudSyncFrequency').value;
+
+            if (!cnpj && !cpf) {
+                alert('⚠️ Por favor, informe ao menos um CNPJ ou CPF para monitorar.');
+                return;
+            }
+
+            const config = {
+                cnpj_monitorado: cnpj || null,
+                cpf_monitorado: cpf || null,
+                datajud_sync_enabled: syncEnabled,
+                datajud_sync_frequency: syncFrequency
+            };
+
+            try {
+                // TODO: Implement API call to save company DataJud config
+                // const response = await apiPost('/companies/datajud-config', config);
+
+                console.log('Saving DataJud config:', config);
+
+                alert(`✅ CONFIGURAÇÃO SALVA!
+
+CNPJ: ${cnpj || 'Não informado'}
+CPF: ${cpf || 'Não informado'}
+Sincronização Automática: ${syncEnabled ? 'ATIVA' : 'INATIVA'}
+Frequência: ${syncFrequency === 'daily' ? 'Diária' : syncFrequency === 'weekly' ? 'Semanal' : 'Mensal'}
+
+A sincronização automática começará a buscar processos da base DataJud conforme a frequência configurada.
+
+🔔 IMPORTANTE: Esta configuração será aplicada em breve quando a API DataJud estiver integrada.`);
+
+                // Show status
+                document.getElementById('datajudStatus').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error saving DataJud config:', error);
+                alert('❌ Erro ao salvar configuração. Por favor, tente novamente.');
+            }
+        }
+
+        async function testDataJudSync() {
+            const cnpj = document.getElementById('cnpjMonitorado').value;
+            const cpf = document.getElementById('cpfMonitorado').value;
+
+            if (!cnpj && !cpf) {
+                alert('⚠️ Por favor, configure um CNPJ ou CPF antes de testar a sincronização.');
+                return;
+            }
+
+            if (!confirm('Deseja executar uma sincronização manual agora?\n\nIsso pode levar alguns minutos dependendo da quantidade de processos encontrados.')) {
+                return;
+            }
+
+            try {
+                alert('🔄 SINCRONIZAÇÃO INICIADA\n\nBuscando processos na base DataJud...\n\nEsta funcionalidade será implementada quando a API DataJud estiver integrada.\n\nPor enquanto, os processos são adicionados via upload de PDF com extração automática por IA.');
+
+                // TODO: Implement API call to trigger manual sync
+                // const response = await apiPost('/companies/datajud-sync/manual');
+                // Show results
+
+            } catch (error) {
+                console.error('Error testing DataJud sync:', error);
+                alert('❌ Erro ao testar sincronização. Por favor, tente novamente.');
+            }
+        }
+
+        // Load DataJud config on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDataJudConfig();
+        });
     </script>
 </body>
 </html>

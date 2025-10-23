@@ -102,10 +102,6 @@
                 <i class="bi bi-file-earmark-text-fill"></i>
                 Documentos
             </a>
-            <a href="relatorios.html" class="nav-link">
-                <i class="bi bi-graph-up"></i>
-                Relatórios
-            </a>
         </nav>
 
         <div style="margin-top: auto; padding-top: 2rem; border-top: 1px solid var(--gray-light);">
@@ -300,9 +296,12 @@
             // Não enviar mais título/número/tipo manualmente
             // O backend vai processar com OCR + Gemini e extrair automaticamente
 
+            // CRITICAL FIX: Declare progressDiv in outer scope so catch block can access it
+            let progressDiv = null;
+
             try {
                 // Show upload progress
-                const progressDiv = document.createElement('div');
+                progressDiv = document.createElement('div');
                 progressDiv.innerHTML = `
                     <div class="file-item" style="background: #f0f9ff;">
                         <div class="file-info">
