@@ -287,23 +287,11 @@
                 return;
             }
 
-            // Prompt for processo info
-            const numeroProcesso = prompt('Número do Processo:');
-            if (!numeroProcesso) return;
-
-            const titulo = prompt('Título do Documento:');
-            if (!titulo) return;
-
-            const tipoProcesso = prompt('Tipo (Trabalhista, Civil, Tributário, etc):');
-            if (!tipoProcesso) return;
-
-            // Create FormData
+            // Create FormData - IA do Snowflake vai extrair tudo automaticamente
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('numero_processo', numeroProcesso);
-            formData.append('titulo', titulo);
-            formData.append('tipo_processo', tipoProcesso);
-            formData.append('descricao', '');
+            // Não enviar mais título/número/tipo manualmente
+            // O backend vai processar com OCR + Gemini e extrair automaticamente
 
             try {
                 // Show upload progress
@@ -326,7 +314,7 @@
                 const response = await fetch(`${API_BASE_URL}/processos/upload`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${getAuthToken()}`
+                        'Authorization': `Bearer ${getToken()}`
                     },
                     body: formData
                 });

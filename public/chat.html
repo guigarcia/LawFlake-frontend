@@ -445,9 +445,9 @@
             try {
                 const response = await apiGet('/processos/stats');
 
-                // Fetch actual processos list
+                // Fetch actual processos list (max 100 per API limit)
                 const processosResponse = await apiPost('/processos/search', {
-                    size: 1000,
+                    size: 100,
                     from: 0
                 });
 
