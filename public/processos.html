@@ -660,27 +660,30 @@
             }
         }
 
-        // Drag and drop handlers
-        const dropZone = document.getElementById('dropZone');
+        // Drag and drop handlers - wrap in setTimeout to ensure modal exists
+        setTimeout(() => {
+            const dropZone = document.getElementById('dropZone');
+            if (dropZone) {
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('dragover');
+                });
 
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
-        });
+                dropZone.addEventListener('dragleave', () => {
+                    dropZone.classList.remove('dragover');
+                });
 
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            const file = e.dataTransfer.files[0];
-            if (file) {
-                document.getElementById('pdfFile').files = e.dataTransfer.files;
-                handleFileSelect({ target: { files: [file] } });
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('dragover');
+                    const file = e.dataTransfer.files[0];
+                    if (file) {
+                        document.getElementById('pdfFile').files = e.dataTransfer.files;
+                        handleFileSelect({ target: { files: [file] } });
+                    }
+                });
             }
-        });
+        }, 100);
 
         function closePdfViewer() {
             document.getElementById('pdfViewerModal').classList.remove('active');
