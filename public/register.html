@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LawFlake - Cadastro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 0;
+        }
+
+        .register-card {
+            max-width: 500px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 3rem;
+        }
+
+        .btn-register {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px;
+            font-weight: 600;
+        }
+
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .password-strength {
+            height: 5px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            transition: all 0.3s;
+        }
+
+        .strength-weak { width: 33%; background: #f44336; }
+        .strength-medium { width: 66%; background: #ff9800; }
+        .strength-strong { width: 100%; background: #4caf50; }
+    </style>
+</head>
+<body>
+    <div class="register-card">
+        <div class="text-center mb-4">
+            <h1 class="h2 fw-bold" style="color: #667eea;">
+                <i class="bi bi-snow2"></i> LawFlake
+            </h1>
+            <p class="text-muted">Criar nova conta</p>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <form id="registerForm">
+            <div class="mb-3">
+                <label class="form-label">Nome Completo</label>
+                <input type="text" class="form-control form-control-lg" id="nomeCompleto" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control form-control-lg" id="email" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Senha</label>
+                <input type="password" class="form-control form-control-lg" id="password" required minlength="8">
+                <div class="password-strength">
+                    <div id="strengthBar" class="password-strength-bar"></div>
+                </div>
+                <small class="text-muted">Mínimo 8 caracteres com letras, números e símbolos</small>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Confirmar Senha</label>
+                <input type="password" class="form-control form-control-lg" id="confirmPassword" required>
+            </div>
+
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="termsCheck" required>
+                <label class="form-check-label" for="termsCheck">
+                    Concordo com os <a href="#" class="text-decoration-none">Termos de Uso</a> e
+                    <a href="#" class="text-decoration-none">Política de Privacidade</a>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-register w-100 text-white mb-3" id="registerBtn">
+                <span id="registerText">Criar Conta</span>
+                <span id="registerSpinner" class="spinner-border spinner-border-sm d-none"></span>
+            </button>
+
+            <div class="text-center">
+                <span class="text-muted">Já tem uma conta?</span>
+                <a href="login.html" class="text-decoration-none">Fazer Login</a>
+            </div>
+        </form>
+
+        <div class="text-center mt-3">
+            <small class="text-muted">Powered by Snowflake Cortex AI</small>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+
+    <script>
+        // Password strength indicator
+        document.getElementById('password').addEventListener('input', (e) => {
+            const password = e.target.value;
+            const strengthBar = document.getElementById('strengthBar');
+
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+            if (password.match(/[0-9]/)) strength++;
+            if (password.match(/[^a-zA-Z0-9]/)) strength++;
+
+            strengthBar.className = 'password-strength-bar';
+            if (strength <= 1) {
+                strengthBar.classList.add('strength-weak');
+            } else if (strength <= 2) {
+                strengthBar.classList.add('strength-medium');
+            } else {
+                strengthBar.classList.add('strength-strong');
+            }
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const nomeCompleto = document.getElementById('nomeCompleto').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // Validate passwords match
+            if (password !== confirmPassword) {
+                showAlert('As senhas não coincidem', 'danger');
+                return;
+            }
+
+            // Validate password strength
+            if (password.length < 8) {
+                showAlert('A senha deve ter no mínimo 8 caracteres', 'danger');
+                return;
+            }
+
+            const registerBtn = document.getElementById('registerBtn');
+            const registerText = document.getElementById('registerText');
+            const registerSpinner = document.getElementById('registerSpinner');
+
+            registerBtn.disabled = true;
+            registerText.classList.add('d-none');
+            registerSpinner.classList.remove('d-none');
+
+            try {
+                const response = await fetch(`${window.API_BASE_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        email: email,
+                        password: password,
+                        nome_completo: nomeCompleto
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('Conta criada com sucesso! Verifique seu email para confirmar.', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                } else {
+                    showAlert('Erro: ' + (data.detail || 'Falha ao criar conta'), 'danger');
+                }
+            } catch (error) {
+                showAlert('Erro ao conectar. Verifique se o backend está rodando.', 'danger');
+            } finally {
+                registerBtn.disabled = false;
+                registerText.classList.remove('d-none');
+                registerSpinner.classList.add('d-none');
+            }
+        });
+
+        function showAlert(message, type) {
+            document.getElementById('alertContainer').innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
